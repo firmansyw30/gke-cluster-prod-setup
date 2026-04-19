@@ -4,21 +4,28 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "~> 6.28" # To satisfy the highest minimum requirement from VPC module subnets
+      version = "7.28.0"
     }
-  }
-
-  cloud {
-    
-    organization = "GCP-Experimental"
-
-    workspaces {
-      name = "GKE-Experimental"
+    google-beta = {
+      source  = "hashicorp/google-beta"
+      version = "7.28.0"
     }
+
+    # kubernetes = {
+    #   source  = "hashicorp/kubernetes"
+    #   version = "3.1.0"
+    # }
   }
 }
+
 provider "google" {
   project     = var.project_id
   region      = var.region
-  credentials = file("credentials.json") # Update with the actual path to your credentials file
+  credentials = file(var.credential_file)
+}
+
+provider "google-beta" {
+  project     = var.project_id
+  region      = var.region
+  credentials = file(var.credential_file)
 }
