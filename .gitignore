@@ -1,2 +1,8 @@
 prod.tfvars
 .terraform
+*.json
+*.tfstate
+*.tfstate.backup
+.terraform.tfstate
+.terraform.tfstate.backup
+terraform.tfstate.d
