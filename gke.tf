@@ -8,46 +8,49 @@ provider "kubernetes" {
 }
 
 module "gke" {
-  source                     = "terraform-google-modules/kubernetes-engine/google"
-  project_id                 = "<PROJECT ID>"
-  name                       = "gke-test-1"
-  region                     = "asia-southeast2"
-  zones                      = ["asia-southeast2-a", "asia-southeast2-b", "asia-southeast2-c"]
-  network                    = "vpc-01"
-  subnetwork                 = "asia-southeast2-01"
-  ip_range_pods              = "asia-southeast2-01-gke-01-pods"
-  ip_range_services          = "asia-southeast2-01-gke-01-services"
-  http_load_balancing        = false
-  network_policy             = false
-  horizontal_pod_autoscaling = true
-  filestore_csi_driver       = false
-  dns_cache                  = false
+  source                     = "terraform-google-modules/kubernetes-engine/google" # Use the official module source
+  version                    = "44.0.0"
+  project_id                 = var.project_id
+  name                       = var.cluster_name
+  region                     = var.region
+  zones                      = var.zones
+  network                    = module.vpc.network_name
+  subnetwork                 = var.gke_subnetwork
+  ip_range_pods              = var.vpc_secondary_ranges[var.gke_subnetwork][0].range_name
+  ip_range_services          = var.vpc_secondary_ranges[var.gke_subnetwork][1].range_name
+  http_load_balancing        = var.gke_enable_http_load_balancing
+  horizontal_pod_autoscaling = var.gke_enable_horizontal_pod_autoscaling
+  network_policy             = var.gke_enable_network_policy
+  filestore_csi_driver       = var.gke_enable_filestore_csi_driver
+  dns_cache                  = var.gke_enable_dns_cache
 
   node_pools = [
     {
-      name                        = "default-node-pool"
-      machine_type                = "n4-standard-2"
-      node_locations              = "asia-southeast2-b,asia-southeast2-c"
-      min_count                   = 3
-      max_count                   = 6
-      local_ssd_count             = 0
-      spot                        = false
-      disk_size_gb                = 100
-      disk_type                   = "pd-standard"
-      image_type                  = "COS_CONTAINERD"
-      enable_gcfs                 = false
-      enable_gvnic                = false
-      logging_variant             = "DEFAULT"
-      auto_repair                 = true
-      auto_upgrade                = true
-      service_account             = "project-service-account@<PROJECT ID>.iam.gserviceaccount.com"
-      preemptible                 = false
-      initial_node_count          = 80
-      accelerator_count           = 1
-      accelerator_type            = "nvidia-l4"
-      gpu_driver_version          = "LATEST"
-      gpu_sharing_strategy        = "TIME_SHARING"
-      max_shared_clients_per_gpu = 2
+      name                       = var.node_pool_name
+      node_count                 = var.node_count
+      autoscaling                = var.gke_enable_autoscaling
+      machine_type               = var.gke_machine_type
+      disk_size_gb               = var.gke_disk_size_gb
+      disk_type                  = var.gke_disk_type
+      image_type                 = var.gke_image_type
+      service_account            = var.gke_service_account
+      initial_node_count         = var.gke_initial_node_count
+      node_locations             = join(",", var.gke_node_locations)
+      min_count                  = var.gke_min_count
+      max_count                  = var.gke_max_count
+      local_ssd_count            = var.gke_local_ssd_count
+      spot                       = var.gke_enable_node_spot
+      enable_gcfs                = var.gke_enable_gcfs
+      enable_gvnic               = var.gke_enable_gvnic
+      logging_variant            = var.gke_node_pools_logging_variant
+      auto_repair                = var.gke_node_pools_auto_repair
+      auto_upgrade               = var.gke_node_pools_auto_upgrade
+      accelerator_count          = var.gke_accelerator_count
+      accelerator_type           = var.gke_accelerator_type
+      gpu_driver_version         = var.gke_gpu_driver_version
+      gpu_sharing_strategy       = var.gke_gpu_sharing_strategy
+      max_shared_clients_per_gpu = var.gke_max_shared_clients_per_gpu
+      preemptible                = var.gke_node_pools_preemptible
     },
   ]
 
@@ -58,39 +61,8 @@ module "gke" {
     ]
   }
 
-  node_pools_labels = {
-    all = {}
-
-    default-node-pool = {
-      default-node-pool = true
-    }
-  }
-
-  node_pools_metadata = {
-    all = {}
-
-    default-node-pool = {
-      node-pool-metadata-custom-value = "my-node-pool"
-    }
-  }
-
-  node_pools_taints = {
-    all = []
-
-    default-node-pool = [
-      {
-        key    = "default-node-pool"
-        value  = true
-        effect = "PREFER_NO_SCHEDULE"
-      },
-    ]
-  }
-
-  node_pools_tags = {
-    all = []
-
-    default-node-pool = [
-      "default-node-pool",
-    ]
-  }
+  node_pools_labels   = { all = {} }
+  node_pools_metadata = { all = {} }
+  node_pools_taints   = { all = [] }
+  node_pools_tags     = { all = [] }
 }
